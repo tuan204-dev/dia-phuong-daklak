@@ -1,0 +1,6 @@
+
+
+# all node modules (must be after !*/ to take precedence)
+**/node_modules/
+
+.vscode/

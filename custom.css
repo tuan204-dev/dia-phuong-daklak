@@ -1,0 +1,658 @@
+﻿@import "tailwindcss" prefix(t);
+
+@theme {
+  --color-tw-primary: #212636;
+  --color-tw-secondary: #667085;
+
+  --breakpoint-bt-xl: 1200px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Merriweather", serif;
+}
+
+header.header .header-home-navbar .navbar .navbar-nav {
+  width: 100%;
+}
+
+header.header .header-home-navbar .navbar .navbar-nav .nav-item:first-child {
+  margin-right: auto;
+}
+
+header.header .header-home-navbar .navbar .navbar-nav .nav-item:last-child {
+  margin-left: auto;
+}
+
+header.header
+  .header-home-navbar
+  .navbar
+  .navbar-nav
+  .nav-item:last-child
+  a::after {
+  display: none;
+}
+
+header.header {
+  position: relative;
+}
+
+.header-home {
+  border-bottom: 2px solid #fec84b;
+}
+
+.time {
+  color: #667085;
+  font-size: 13px;
+}
+
+.description {
+  color: #667085;
+  font-size: 0.975rem;
+}
+
+.section.section-home .main-new-post .post-info {
+  background-color: #f5f5f5;
+  padding: 12px 24px;
+}
+
+.section.section-home .main-new-post .post-info .name {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.section.section-home .main-new-post .post-info .name a {
+  color: #212636;
+}
+
+.section.section-home .more-new-posts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.section.section-home .more-new-posts .more-new-post-item {
+  background-color: #f5f5f5;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ===== Ward section folder tabs (Figma 588:26849 / 580:24413) ===== */
+/* Tabs sit on a full-width red bar; the red bar = top of the panel. Tabs are
+   content-width and overlap left-over-right (both shapes curve right). The
+   active tab is red (blends with the bar); the inactive tab is a cream shape. */
+#ward-tabs {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  height: 46px;
+  border-radius: 24px 24px 0 0;
+}
+
+.ward-tab {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 40px;
+  font-weight: 600;
+  font-size: 16px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #a01011;
+  background: transparent;
+  cursor: pointer;
+  --tab-fill: #fdefd5; /* cream when inactive */
+}
+
+.ward-tab.is-active {
+  --tab-fill: #b6181f; /* red when active (blends into the bar) */
+}
+
+/* left tab always overlaps the right one (its tail defines the divider) */
+.ward-tab--info {
+  z-index: 2;
+}
+.ward-tab--news {
+  z-index: 1;
+}
+
+/* active label: gold gradient + drop shadow */
+.ward-tab.is-active .ward-tab__text {
+  font-weight: 700;
+  font-size: 20px;
+  background-image: linear-gradient(180deg, #fdf3e1 22.5%, #ffce5b 77.5%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.ward-tab__text {
+  position: relative;
+  z-index: 1;
+}
+
+/* folder shape: rounded top-left + tail overhanging to the right */
+.ward-tab__shape {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: calc(100% + 40px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.ward-tab__shape path {
+  fill: var(--tab-fill);
+}
+
+/* mobile: smaller folder tabs (Figma mobile = 36px tall) */
+@media (max-width: 1023px) {
+  header.header .header-home-navbar .navbar .dropdown-toggle:after {
+    display: none !important;
+  }
+
+  header.header .header-home-navbar .navbar .nav-item .nav-link {
+    font-size: 14px !important;
+    font-family: Roboto, sans-serif;
+  }
+
+  #ward-tabs {
+    height: 36px;
+    border-radius: 16px 16px 0 0;
+  }
+  .ward-tab {
+    height: 36px;
+    padding-left: 34px;
+    padding-right: 0px;
+    font-size: 12px;
+  }
+  .ward-tab.is-active .ward-tab__text {
+    font-size: 14px;
+  }
+  .ward-tab__shape {
+    width: calc(100% + 28px);
+  }
+
+  /* header nav: slide horizontally instead of hiding items.
+     full selector to beat app.bundle.css `…navbar-nav{justify-content:center}`
+     which otherwise centers the items and pushes the first ones off-screen */
+  header.header .header-home-navbar .navbar .navbar-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 4px;
+  }
+  .header-home-navbar .navbar-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .header-home-navbar .navbar-nav > .nav-item {
+    flex: 0 0 auto;
+  }
+  /* pin home (first) & menu button (last); middle items scroll under them.
+     selector matches the desktop auto-margin rule's specificity to override it */
+  header.header .header-home-navbar .navbar .navbar-nav > .nav-item:first-child,
+  header.header .header-home-navbar .navbar .navbar-nav > .nav-item:last-child {
+    position: sticky;
+    z-index: 3;
+    background: #ffeecf;
+    display: flex;
+    align-items: center;
+  }
+  header.header
+    .header-home-navbar
+    .navbar
+    .navbar-nav
+    > .nav-item:first-child {
+    left: 0;
+    margin-right: 0;
+    padding: 0 14px 0 4px;
+    box-shadow: 6px 0 8px -4px rgba(0, 0, 0, 0.12);
+  }
+  header.header .header-home-navbar .navbar .navbar-nav > .nav-item:last-child {
+    right: 0;
+    margin-left: 0;
+    padding: 0 4px 0 14px;
+    box-shadow: -6px 0 8px -4px rgba(0, 0, 0, 0.12);
+  }
+  /* the home icon overflows its 16px (t:w-4) box and collides with the
+     scrolling items — let it size to its own content instead */
+  header.header
+    .header-home-navbar
+    .navbar
+    .navbar-nav
+    > .nav-item:first-child
+    .btn {
+    width: auto;
+  }
+}
+
+/* ward summary map-background overlay */
+.ward-info-overlay {
+  /* mobile: uniform dark-red tint over the full-bleed map so text stays legible */
+  background: rgba(150, 18, 22, 0.74);
+}
+@media (min-width: 1024px) {
+  .ward-info-overlay {
+    /* desktop: map sits on the right, red fades out left → right */
+    background: linear-gradient(
+      90deg,
+      #b6181f 0%,
+      rgba(182, 24, 31, 0.9) 20%,
+      rgba(182, 24, 31, 0) 90.87%
+    );
+  }
+}
+
+/* Category-new swiper pagination (pill style) */
+.swiperPaginNewPosts .swiper-pagination-bullet {
+  width: 12px;
+  height: 12px;
+  margin: 0 5px;
+  border-radius: 9999px;
+  background: #d9d9d9;
+  opacity: 1;
+  transition:
+    width 0.3s ease,
+    background-color 0.3s ease;
+}
+
+.swiperPaginNewPosts .swiper-pagination-bullet-active {
+  width: 34px;
+  background: #e11718;
+}
+
+/* Ward search suggestions */
+.ward-suggestion-item {
+  @apply t:block t:w-full t:text-left t:px-4 t:py-2.5 t:text-sm t:text-[#333] t:cursor-pointer t:transition-colors t:duration-150;
+}
+
+.ward-suggestion-item:hover {
+  @apply t:bg-[#f5f5f5];
+}
+
+/* Title */
+.title {
+  @apply t:font-bold t:hover:text-[#bc0000];
+}
+
+.title.l1 {
+  font-size: 1.375rem;
+}
+
+.title.l2 {
+  font-size: 1rem;
+}
+
+/* Post */
+.post-meta {
+  @apply t:flex t:items-center t:gap-2;
+}
+
+.post-meta .cate-name {
+  @apply t:text-[#DE3024] t:text-[13px] t:hover:underline;
+}
+
+.post-meta .dot-separation {
+  @apply t:rounded-full t:size-[3.5px] t:bg-tw-secondary;
+}
+
+.block-image {
+  @apply t:relative t:w-[180px]! t:h-[120px]! t:sm:w-[210px]! t:sm:h-[140px]! t:md:w-[230px]! t:md:h-[165px]! t:xl:w-[270px]! t:xl:h-[180px]!;
+}
+
+.block-image-sm {
+  @apply t:relative t:w-[120px]! t:h-[80px]! t:sm:w-[150px]! t:sm:h-[100px]! t:md:w-[170px]! t:md:h-[115px]! t:xl:w-[200px]! t:xl:h-[130px]!;
+}
+
+.block-image-ssm {
+  @apply t:relative t:w-[100px]! t:h-[70px]! t:sm:w-[130px]! t:sm:h-[80px]! t:md:w-[160px]! t:md:h-[120px]! t:xl:w-[160px]! t:xl:h-[120px]!;
+}
+
+.block-image-ssm-2 {
+  @apply t:relative t:w-[170px]! t:h-[112px]!;
+}
+
+.block-image-lg {
+  @apply t:relative t:w-[230px]! t:h-[150px]! t:sm:w-[270px]! t:sm:h-[180px]! t:md:w-[300px]! t:md:h-[200px]! t:xl:w-[350px]! t:xl:h-[230px]!;
+}
+
+.block-image .img {
+  @apply t:absolute t:inset-0 t:w-full t:h-full t:object-cover;
+}
+
+.figure {
+  @apply t:relative t:w-full t:h-full t:overflow-hidden;
+}
+
+.figure .img {
+  @apply t:absolute t:inset-0 t:w-full t:h-full t:object-cover;
+}
+
+.img-thumb-block {
+  aspect-ratio: 3 / 2 !important;
+  overflow: hidden;
+}
+
+.img-thumb-block.vertical-post {
+  width: 100%;
+}
+
+.img-thumb-block.vertical-post.sm-size {
+}
+
+.img-thumb-block.vertical-post.md-size {
+}
+
+.img-thumb-block.vertical-post.lg-size {
+}
+
+.img-thumb-block.horizontal-post {
+  height: 100%;
+}
+
+.img-thumb-block.horizontal-post.ssm-size {
+  @apply t:w-[145px];
+}
+
+.img-thumb-block.horizontal-post.sm-size {
+  @apply t:w-[178px];
+}
+
+.img-thumb-block.horizontal-post.md-size {
+  @apply t:w-[192px];
+}
+
+.img-thumb-block.horizontal-post.lg-size {
+}
+
+.dot-pencisonar {
+  animation: pencisonar 1.5s ease infinite;
+}
+
+@keyframes pencisonar {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+.cate-label {
+  @apply t:px-3 t:pt-[3px] t:border-l-[6px] t:border-[#FC0202] t:w-fit t:relative;
+}
+
+.cate-label .cate-label-bg {
+  @apply t:absolute t:inset-0 t:bg-[#FC02021A] t:z-0 t:origin-left;
+}
+
+.cate-label h2 {
+  @apply t:relative t:z-[1];
+}
+
+/* truyền hình - phát thanh tab */
+.broadcast-tab .broadcast-tab-item {
+  @apply t:cursor-pointer;
+}
+
+.broadcast-tab .broadcast-tab-item:not(.active) {
+  @apply t:border-transparent!;
+}
+
+.broadcast-tab .broadcast-tab-item:not(.active) .cate-label-bg {
+  @apply t:hidden;
+}
+
+.broadcast-tab .broadcast-tab-item:not(.active) {
+  @apply t:order-1!;
+}
+
+.broadcast-tab .broadcast-tab-item:not(.active) h2 {
+  @apply t:font-normal;
+}
+
+.broadcast-tab .broadcast-tab-item.active h2 {
+  @apply t:font-bold;
+}
+
+.broadcast-tab .broadcast-tab-item-link {
+  display: none;
+  @apply t:items-center t:gap-1 t:text-tw-primary t:font-medium t:absolute t:right-0 t:bottom-1/2 t:translate-y-1/2;
+}
+
+.broadcast-tab .tab-truyen-hinh.active ~ .truyen-hinh-link {
+  display: flex;
+}
+
+.broadcast-tab .tab-phat-thanh.active ~ .phat-thanh-link {
+  display: flex;
+}
+
+@keyframes side-in-right {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+.side-in-right {
+  animation: side-in-right 1s ease forwards;
+}
+
+/* Deep Menu Levels Support (Level 3+) */
+/* Override dropdown-menu overflow to allow submenu to show */
+header.header .header-home-navbar .navbar .dropdown-menu {
+  @apply t:overflow-visible!;
+}
+
+/* Level 2 dropdown items that have children */
+.dropdown-menu .dropdown-item.has-children {
+  @apply t:relative;
+}
+
+/* Arrow indicator for items with children */
+.dropdown-menu .dropdown-item.has-children > .link::after {
+  content: "";
+  @apply t:inline-block t:w-[6px] t:h-[6px] t:border-r-[1.5px] t:border-b-[1.5px] t:border-current t:ml-[8px] t:align-middle;
+  transform: rotate(-45deg);
+}
+
+/* Level 3+ submenu container */
+.dropdown-menu .dropdown-item > .submenu {
+  @apply t:hidden t:absolute t:left-full t:top-0 t:min-w-[200px] t:bg-white t:border t:border-black/10 t:rounded-[4px] t:shadow-lg t:py-[8px] t:px-0 t:z-[1001] t:list-none t:m-0;
+}
+
+/* Show submenu on hover */
+.dropdown-menu .dropdown-item:hover > .submenu {
+  @apply t:flex t:flex-row t:flex-wrap t:gap-0 t:max-w-[600px] t:p-[6px];
+}
+
+/* Level 3+ submenu items - horizontal layout */
+.dropdown-menu .dropdown-item > .submenu > .submenu-item {
+  @apply t:flex-none t:min-w-[180px] t:py-[2px] t:px-[8px] t:whitespace-nowrap t:relative;
+}
+
+/* Level 3+ submenu links */
+.dropdown-menu .dropdown-item > .submenu > .submenu-item > .link {
+  @apply t:block t:text-tw-primary t:no-underline t:text-[14px] t:py-[6px] t:px-[12px] t:rounded-[4px] t:transition-colors t:duration-200 t:ease-in-out;
+}
+
+.dropdown-menu .dropdown-item > .submenu > .submenu-item > .link:hover {
+  @apply t:bg-[#f5f5f5] t:text-[#bc0000];
+}
+
+/* Level 4+ nested submenus */
+.submenu .submenu-item.has-children {
+  @apply t:relative;
+}
+
+.submenu .submenu-item.has-children > .link::after {
+  content: "";
+  @apply t:inline-block t:w-[5px] t:h-[5px] t:border-r-[1.5px] t:border-b-[1.5px] t:border-current t:ml-[6px] t:align-middle;
+  transform: rotate(-45deg);
+}
+
+/* Level 4+ submenu */
+.submenu .submenu-item > .submenu {
+  @apply t:hidden t:absolute t:left-full t:top-0 t:min-w-[180px] t:bg-white t:border t:border-black/10 t:rounded-[4px] t:shadow-lg t:py-[8px] t:px-0 t:z-[1002] t:list-none t:m-0;
+}
+
+.submenu .submenu-item:hover > .submenu {
+  @apply t:flex t:flex-row t:flex-wrap t:gap-0 t:min-w-[350px] t:p-[6px];
+}
+
+/* Ensure proper stacking for deeply nested menus */
+.submenu .submenu-item > .submenu > .submenu-item {
+  @apply t:flex-none t:min-w-[160px] t:py-[2px] t:px-[6px];
+}
+
+.submenu .submenu-item > .submenu > .submenu-item > .link {
+  @apply t:block t:text-tw-primary t:no-underline t:text-[13px] t:py-[5px] t:px-[10px] t:rounded-[4px] t:transition-colors t:duration-200 t:ease-in-out;
+}
+
+.submenu .submenu-item > .submenu > .submenu-item > .link:hover {
+  @apply t:bg-[#f5f5f5] t:text-[#bc0000];
+}
+
+/* Handle edge cases - flip submenu to left if near viewport edge */
+.dropdown-menu .dropdown-item > .submenu.flip-left,
+.submenu .submenu-item > .submenu.flip-left {
+  @apply t:left-auto t:right-full;
+}
+
+/* Separator between submenu sections */
+.submenu .submenu-separator {
+  @apply t:w-full t:h-[1px] t:bg-[#e0e0e0] t:my-[8px];
+}
+
+/* Submenu section headers */
+.submenu .submenu-header {
+  @apply t:w-full t:pt-[8px] t:px-[16px] t:pb-[4px] t:text-[12px] t:font-semibold t:text-tw-secondary t:uppercase t:tracking-[0.5px];
+}
+
+section.section-category-related
+  .category-related-posts
+  .horizontal-post-box
+  .box-block-image {
+  height: 180px;
+  max-width: 270px;
+}
+
+@media screen and (max-width: 767px) and (min-width: 576px) {
+  section.section-category-related
+    .category-related-posts
+    .horizontal-post-box
+    .box-block-image {
+    height: 160px;
+    max-width: 210px;
+  }
+}
+
+@media screen and (max-width: 575px) and (min-width: 431px) {
+  section.section-category-related
+    .category-related-posts
+    .horizontal-post-box
+    .box-block-image {
+    height: 120px;
+    max-width: 180px;
+  }
+}
+
+@media screen and (max-width: 430px) {
+  section.section-category-related
+    .category-related-posts
+    .horizontal-post-box
+    .box-block-image {
+    height: 100px;
+    max-width: 150px;
+  }
+}
+
+section.section-category-related
+  .category-related-posts
+  .horizontal-post-box
+  .name {
+  font-size: 1.125rem;
+}
+
+section.section-category-related .category-related-posts .horizontal-post-box {
+  border-bottom: 1px solid #d4d4d4;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+}
+
+section.section-category-new .category-new-more .horizontal-post-box {
+  border-bottom: 1px solid #d4d4d4;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+}
+
+section.section-category-new
+  .category-new-more
+  .horizontal-post-box
+  .box-block-image {
+  height: 180px;
+  max-width: 270px;
+}
+
+@media screen and (max-width: 1399px) and (min-width: 768px) {
+  section.section-category-new
+    .category-new-more
+    .horizontal-post-box
+    .box-block-image {
+    height: 160px;
+    max-width: 240px;
+  }
+}
+
+@media screen and (max-width: 767px) and (min-width: 576px) {
+  section.section-category-new
+    .category-new-more
+    .horizontal-post-box
+    .box-block-image {
+    height: 140px;
+    max-width: 210px;
+  }
+}
+
+@media screen and (max-width: 575px) and (min-width: 431px) {
+  section.section-category-new
+    .category-new-more
+    .horizontal-post-box
+    .box-block-image {
+    height: 120px;
+    max-width: 180px;
+  }
+}
+
+@media screen and (max-width: 430px) {
+  section.section-category-new
+    .category-new-more
+    .horizontal-post-box
+    .box-block-image {
+    height: 100px;
+    max-width: 150px;
+  }
+}
