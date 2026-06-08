@@ -165,6 +165,7 @@ function cateTitleAnimation() {
     });
 }
 
+var WARD_DATA_URL = 'https://pub-767846261d1b4ab5adf906740bb1458e.r2.dev/assets-daklak/xa_phuong/data.json';
 let cachedWardData = null;
 
 function renderWardSlides(data) {
@@ -175,9 +176,10 @@ function renderWardSlides(data) {
     }
 
     const slideHtml = data.map(function (item) {
+        var wardName = escapeHtml(item.ten_xa_phuong || '');
         return '<div class="swiper-slide swiper-slide-active">' +
             '<div class="slide-tag">' +
-            '<a class="tag inter" href="/thong-tin-102-xa-phuong-tinh-dak-lak/#' + item.id + '" title="' + item.name + '">' + item.name + '</a>' +
+            '<a class="tag inter t:uppercase" href="/thong-tin-102-xa-phuong-tinh-dak-lak/#' + escapeHtml(item.id || '') + '" title="' + wardName + '">' + wardName + '</a>' +
             '</div>' +
             '</div>';
     }).join('');
@@ -191,7 +193,7 @@ function loadWard() {
         return;
     }
     $.ajax({
-        url: 'https://pub-58c9d8d1f8f84ab6aa09e49343220dda.r2.dev/xa-phuong.json',
+        url: WARD_DATA_URL,
         dataType: 'json',
         success: function (data) {
             cachedWardData = data;
@@ -264,6 +266,7 @@ function renderWardDetails(data) {
         var img = escapeHtml(item.image_url || placeholder);
         var name = escapeHtml(item.ten_xa_phuong || '');
         var id = escapeHtml(item.id || '');
+        var uuid = escapeHtml(item.uuid || '');
 
         return '<div id="' + id + '" class="t:scroll-mt-28 t:flex t:flex-col t:rounded-[12px] t:overflow-hidden t:border t:border-[#A01011]">' +
             '<div class="t:px-4 t:py-2 t:bg-[#A01011] t:text-white t:font-bold">' +
@@ -274,7 +277,7 @@ function renderWardDetails(data) {
             '<ul class="t:text-base t:flex t:flex-col t:gap-y-2 t:list-disc t:pl-5">' +
             rows.join('') +
             '</ul>' +
-            '<button type="button" class="ward-news-link t:block t:w-fit t:mx-auto t:lg:mx-0 t:px-4 t:py-2 t:rounded-full t:border t:border-[#E11718] t:text-[#E11718] t:bg-transparent t:cursor-pointer">Xem tin tức</button>' +
+            '<button type="button" class="ward-news-link t:block t:w-fit t:mx-auto t:lg:mx-0 t:px-4 t:py-2 t:rounded-full t:border t:border-[#E11718] t:text-[#E11718] t:bg-transparent t:cursor-pointer" data-id="' + id + '" data-uuid="' + uuid + '" data-title="' + name + '">Xem tin tức</button>' +
             '</div>' +
             '<div class="t:col-span-2">' +
             '<img src="' + img + '" alt="' + name + '" class="t:w-full t:rounded-[6px] t:aspect-[16/9] t:object-cover">' +
@@ -306,13 +309,86 @@ function loadWardDetails() {
     });
 }
 
+// Đổ thông tin tóm tắt của 1 xã vào panel đỏ tab TIN TỨC (#ward-news-summary)
+function renderWardNewsSummary(item) {
+    if (!item) return;
+
+    var titleEl = document.getElementById('ward-news-summary-title');
+    if (titleEl) titleEl.textContent = item.ten_xa_phuong || '';
+
+    var box = document.getElementById('ward-news-summary');
+    if (!box) return;
+
+    function li(label, value) {
+        if (value === null || value === undefined || String(value).trim() === '') return '';
+        return '<li>' + label + ': <strong>' + escapeHtml(value) + '</strong></li>';
+    }
+
+    var leaders = '';
+    if (Array.isArray(item.lanh_dao) && item.lanh_dao.length) {
+        leaders = '<li>Đồng chí lãnh đạo phường, xã:' +
+            '<ul class="t:list-disc t:pl-5 t:mt-2 t:space-y-1">' +
+            item.lanh_dao.map(function (leader) {
+                var text = String(leader).replace(/^\s*-\s*/, ''); // bỏ tiền tố "- "
+                return '<li><strong>' + escapeHtml(text) + '</strong></li>';
+            }).join('') +
+            '</ul></li>';
+    }
+
+    var left = '<ul class="t:list-disc t:pl-5 t:space-y-3">' +
+        li('Diện tích', item.dien_tich_km2 ? item.dien_tich_km2 + ' km²' : '') +
+        leaders +
+        '</ul>';
+
+    var right = '<ul class="t:list-disc t:pl-5 t:space-y-3">' +
+        li('Dân số', item.dan_so ? formatPopulation(item.dan_so) + ' người' : '') +
+        li('Thông tin sáp nhập', item.thong_tin_sap_nhap) +
+        '</ul>';
+
+    box.innerHTML = left + right;
+}
+
+// Tìm 1 xã theo id trong cache (data.json)
+function findWardById(id) {
+    if (!id) return null;
+    var list = (Array.isArray(cachedWardDetails) && cachedWardDetails.length) ? cachedWardDetails
+        : (Array.isArray(cachedWardData) ? cachedWardData : []);
+    return list.find(function (w) { return String(w.id) === String(id); }) || null;
+}
+
+// Hành vi chung khi chọn 1 xã (bấm "Xem tin tức" hoặc chọn gợi ý tìm kiếm):
+// đổ tóm tắt vào panel đỏ, đổi chuyên mục + tải tin tức, chuyển tab, cuộn lên.
+function goToWardNews(ward) {
+    if (!ward) return;
+
+    renderWardNewsSummary(ward);
+
+    // Đổi chuyên mục hiện tại theo xã, rồi LUÔN gọi API tải lại danh sách bài
+    // (#news-related-list + featured/highlights) và cập nhật tiêu đề mục (#news-cate-title).
+    var cateEl = document.getElementById('current_cate_id');
+    var titleEl = document.getElementById('current_cate_title');
+    if (titleEl) titleEl.textContent = ward.ten_xa_phuong || '';
+    if (cateEl && ward.uuid) cateEl.textContent = ward.uuid; // chỉ ghi đè khi có uuid hợp lệ
+    loadCategoryNews();
+
+    var newsTab = document.querySelector('#ward-tabs .ward-tab[data-tab="news"]');
+    if (newsTab) newsTab.click(); // tái dùng logic chuyển tab (activate('news'))
+
+    var anchor = document.getElementById('ward-tabs');
+    if (anchor) {
+        var top = anchor.getBoundingClientRect().top + window.pageYOffset - 100;
+        window.scrollTo({ top: top, behavior: 'smooth' });
+    }
+}
+
 /* ============================================================
  * Tin tức theo xã/phường (section .news) — render từ API
  * ============================================================ */
 var NEWS_PAGE_SIZE = 14;
 var NEWS_IMG_BASE = 'https://baodaklak.vn/file';
 var NEWS_SITE_FALLBACK = 'fb9e3a03798789de0179a1704dea238e';
-var newsState = { cateId: '', first: 0, total: 0, loading: false };
+var newsState = { cateId: '', first: 0, total: 0, loading: false, reqId: 0 };
+var newsLoadMoreBound = false;
 
 function newsImage(item, query) {
     var path = item && item.avatar
@@ -419,7 +495,10 @@ function appendNewsRelated(list) {
 }
 
 function fetchCategoryNews(isInitial) {
-    if (newsState.loading || !newsState.cateId) return;
+    if (!newsState.cateId) return;
+    // "Xem thêm" không chồng request; nhưng load đầu (đổi xã) luôn được ưu tiên
+    if (newsState.loading && !isInitial) return;
+    var reqId = isInitial ? ++newsState.reqId : newsState.reqId;
     newsState.loading = true;
     newsUpdateLoadMore();
 
@@ -436,6 +515,7 @@ function fetchCategoryNews(isInitial) {
             pageSize: NEWS_PAGE_SIZE
         },
         success: function (res) {
+            if (reqId !== newsState.reqId) return; // đã có lần tải mới hơn -> bỏ kết quả cũ
             var list = (res && res.response) ? res.response : [];
             if (res && typeof res.total === 'number') newsState.total = res.total;
             if (isInitial) {
@@ -448,6 +528,7 @@ function fetchCategoryNews(isInitial) {
             newsUpdateLoadMore();
         },
         error: function (error) {
+            if (reqId !== newsState.reqId) return;
             console.log('fetchCategoryNews error: ', error);
             newsState.loading = false;
             newsUpdateLoadMore();
@@ -474,7 +555,8 @@ function loadCategoryNews() {
     newsState.total = 0;
 
     var btn = document.getElementById('news-load-more');
-    if (btn) {
+    if (btn && !newsLoadMoreBound) {
+        newsLoadMoreBound = true;
         btn.addEventListener('click', function () {
             fetchCategoryNews(false);
         });
@@ -490,11 +572,10 @@ function removeVietnameseTones(str) {
 }
 
 function searchWard() {
-    const searchForm = $('#form-ward-search');
-
-    searchForm.on('submit', function (event) {
+    // cả 2 form (panel info + panel news) đều dùng class .form-ward-search
+    $('.form-ward-search').on('submit', function (event) {
         event.preventDefault();
-        const query = searchForm.find('input').val().toLowerCase().trim();
+        const query = $(this).find('input').val().toLowerCase().trim();
         const normalizedQuery = removeVietnameseTones(query);
 
         const processData = function (data) {
@@ -503,7 +584,7 @@ function searchWard() {
                 return;
             }
             const result = data.filter(function (item) {
-                const normalizedName = removeVietnameseTones(item.name.toLowerCase());
+                const normalizedName = removeVietnameseTones(String(item.ten_xa_phuong || '').toLowerCase());
                 return normalizedName.includes(normalizedQuery);
             });
             renderWardSlides(result);
@@ -513,7 +594,7 @@ function searchWard() {
             processData(cachedWardData);
         } else {
             $.ajax({
-                url: 'https://pub-58c9d8d1f8f84ab6aa09e49343220dda.r2.dev/xa-phuong.json',
+                url: WARD_DATA_URL,
                 dataType: 'json',
                 success: function (data) {
                     cachedWardData = data;
@@ -566,26 +647,35 @@ function wardTabs() {
     });
 
     // "Xem tin tức" buttons are rendered async into the ward list — delegate
-    // the click so they open the TIN TỨC tab and scroll back up to the tabs
+    // the click so they open the TIN TỨC tab cho đúng xã.
     document.addEventListener('click', function (event) {
         var trigger = event.target.closest('.ward-news-link');
         if (!trigger) return;
         event.preventDefault();
-        activate('news');
-        var anchor = document.getElementById('ward-tabs');
-        if (anchor) {
-            var top = anchor.getBoundingClientRect().top + window.pageYOffset - 100;
-            window.scrollTo({ top: top, behavior: 'smooth' });
+
+        var ward = findWardById(trigger.getAttribute('data-id'));
+        // fallback từ data-* nếu cache chưa sẵn sàng
+        if (!ward) {
+            ward = {
+                id: trigger.getAttribute('data-id') || '',
+                uuid: trigger.getAttribute('data-uuid') || '',
+                ten_xa_phuong: trigger.getAttribute('data-title') || ''
+            };
         }
+        goToWardNews(ward);
     });
 }
 
 function wardSuggestions() {
-    const wrapper = document.getElementById('ward-search-wrapper');
-    if (!wrapper) return;
+    // có 2 ô tìm kiếm (panel info + panel news) -> nối logic cho từng cái
+    var wrappers = document.querySelectorAll('.ward-search-wrapper');
+    if (!wrappers.length) return;
+    wrappers.forEach(setupWardSuggestion);
+}
 
-    const input = wrapper.querySelector('input');
-    const list = document.getElementById('ward-suggestions');
+function setupWardSuggestion(wrapper) {
+    var input = wrapper.querySelector('input');
+    var list = wrapper.querySelector('.ward-suggestions');
     if (!input || !list) return;
 
     function render(items) {
@@ -596,8 +686,8 @@ function wardSuggestions() {
         }
         list.innerHTML = items.map(function (item) {
             return '<li>' +
-                '<button type="button" class="ward-suggestion-item" data-id="' + item.id + '">' +
-                item.name +
+                '<button type="button" class="ward-suggestion-item" data-id="' + escapeHtml(item.id || '') + '">' +
+                escapeHtml(item.ten_xa_phuong || '') +
                 '</button>' +
                 '</li>';
         }).join('');
@@ -605,11 +695,11 @@ function wardSuggestions() {
     }
 
     function filterAndRender() {
-        const data = cachedWardData || [];
-        const query = removeVietnameseTones(input.value.toLowerCase().trim());
-        const result = query
+        var data = cachedWardData || [];
+        var query = removeVietnameseTones(input.value.toLowerCase().trim());
+        var result = query
             ? data.filter(function (item) {
-                return removeVietnameseTones(item.name.toLowerCase()).includes(query);
+                return removeVietnameseTones(String(item.ten_xa_phuong || '').toLowerCase()).includes(query);
             })
             : data;
         render(result);
@@ -620,7 +710,7 @@ function wardSuggestions() {
             filterAndRender();
         } else {
             $.ajax({
-                url: 'https://pub-58c9d8d1f8f84ab6aa09e49343220dda.r2.dev/xa-phuong.json',
+                url: WARD_DATA_URL,
                 dataType: 'json',
                 success: function (data) {
                     cachedWardData = data;
@@ -636,12 +726,14 @@ function wardSuggestions() {
     input.addEventListener('focus', showSuggestions);
     input.addEventListener('input', showSuggestions);
 
+    // Chọn 1 gợi ý -> hành xử như bấm "Xem tin tức" của xã đó
     list.addEventListener('click', function (event) {
-        const btn = event.target.closest('.ward-suggestion-item');
+        var btn = event.target.closest('.ward-suggestion-item');
         if (!btn) return;
         input.value = btn.textContent.trim();
         list.classList.add('t:hidden');
-        $('#form-ward-search').trigger('submit');
+        var ward = findWardById(btn.getAttribute('data-id'));
+        if (ward) goToWardNews(ward);
     });
 
     document.addEventListener('click', function (event) {
