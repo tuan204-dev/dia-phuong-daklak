@@ -199,6 +199,7 @@ function loadWard() {
         success: function (data) {
             cachedWardData = data;
             renderWardSlides(data);
+            openWardFromUrl();
         },
         error: function (error) {
             console.log('loadWard error: ', error);
@@ -303,6 +304,7 @@ function loadWardDetails() {
         success: function (data) {
             cachedWardDetails = data;
             renderWardDetails(data);
+            openWardFromUrl();
         },
         error: function (error) {
             console.log('loadWardDetails error: ', error);
@@ -380,6 +382,19 @@ function goToWardNews(ward) {
         var top = anchor.getBoundingClientRect().top + window.pageYOffset - 100;
         window.scrollTo({ top: top, behavior: 'smooth' });
     }
+}
+
+// Deep link: vào trang với #xa_cuor_ang (#{id}) -> mở sẵn tab TIN TỨC của xã đó.
+// Gọi sau mỗi lần dữ liệu xã tải xong; cờ wardFromUrlDone đảm bảo chỉ chạy 1 lần.
+var wardFromUrlDone = false;
+function openWardFromUrl() {
+    if (wardFromUrlDone) return;
+    var id = (window.location.hash || '').replace(/^#/, '').trim();
+    if (!id) { wardFromUrlDone = true; return; } // không có hash -> khỏi xử lý
+    var ward = findWardById(id);
+    if (!ward) return; // dữ liệu chưa sẵn sàng -> để lần tải sau gọi lại
+    wardFromUrlDone = true;
+    goToWardNews(ward);
 }
 
 /* ============================================================
