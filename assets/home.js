@@ -274,7 +274,7 @@ function renderWardDetails(data) {
             '<ul class="t:text-base t:flex t:flex-col t:gap-y-2 t:list-disc t:pl-5">' +
             rows.join('') +
             '</ul>' +
-            '<a href="" class="t:block t:w-fit t:mx-auto t:lg:mx-0 t:px-4 t:py-2 t:rounded-full t:border t:border-[#E11718] t:text-[#E11718]">Xem tin tức</a>' +
+            '<button type="button" class="ward-news-link t:block t:w-fit t:mx-auto t:lg:mx-0 t:px-4 t:py-2 t:rounded-full t:border t:border-[#E11718] t:text-[#E11718] t:bg-transparent t:cursor-pointer">Xem tin tức</button>' +
             '</div>' +
             '<div class="t:col-span-2">' +
             '<img src="' + img + '" alt="' + name + '" class="t:w-full t:rounded-[6px] t:aspect-[16/9] t:object-cover">' +
@@ -384,6 +384,20 @@ function wardTabs() {
         tab.addEventListener('click', function () {
             activate(tab.getAttribute('data-tab'));
         });
+    });
+
+    // "Xem tin tức" buttons are rendered async into the ward list — delegate
+    // the click so they open the TIN TỨC tab and scroll back up to the tabs
+    document.addEventListener('click', function (event) {
+        var trigger = event.target.closest('.ward-news-link');
+        if (!trigger) return;
+        event.preventDefault();
+        activate('news');
+        var anchor = document.getElementById('ward-tabs');
+        if (anchor) {
+            var top = anchor.getBoundingClientRect().top + window.pageYOffset - 100;
+            window.scrollTo({ top: top, behavior: 'smooth' });
+        }
     });
 }
 
