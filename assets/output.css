@@ -283,6 +283,12 @@
   .t\:mb-6 {
     margin-bottom: calc(var(--t-spacing) * 6);
   }
+  .t\:line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
   .t\:block {
     display: block;
   }
@@ -599,11 +605,20 @@
   .t\:px-4 {
     padding-inline: calc(var(--t-spacing) * 4);
   }
+  .t\:px-6 {
+    padding-inline: calc(var(--t-spacing) * 6);
+  }
   .t\:py-2 {
     padding-block: calc(var(--t-spacing) * 2);
   }
+  .t\:py-2\.5 {
+    padding-block: calc(var(--t-spacing) * 2.5);
+  }
   .t\:py-4 {
     padding-block: calc(var(--t-spacing) * 4);
+  }
+  .t\:py-6 {
+    padding-block: calc(var(--t-spacing) * 6);
   }
   .t\:py-8 {
     padding-block: calc(var(--t-spacing) * 8);
@@ -657,15 +672,25 @@
     --tw-font-weight: var(--t-font-weight-normal);
     font-weight: var(--t-font-weight-normal);
   }
+  .t\:font-semibold {
+    --tw-font-weight: var(--t-font-weight-semibold);
+    font-weight: var(--t-font-weight-semibold);
+  }
   .t\:tracking-wide {
     --tw-tracking: var(--t-tracking-wide);
     letter-spacing: var(--t-tracking-wide);
+  }
+  .t\:break-words {
+    overflow-wrap: break-word;
   }
   .t\:whitespace-nowrap {
     white-space: nowrap;
   }
   .t\:text-\[\#333\] {
     color: #333;
+  }
+  .t\:text-\[\#667085\] {
+    color: #667085;
   }
   .t\:text-\[\#999999\] {
     color: #999999;
@@ -689,6 +714,11 @@
     --tw-shadow: 0 8px 24px var(--tw-shadow-color, rgba(0,0,0,0.15));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
+  .t\:transition-colors {
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-timing-function: var(--tw-ease, var(--t-default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--t-default-transition-duration));
+  }
   .t\:outline-none {
     --tw-outline-style: none;
     outline-style: none;
@@ -700,6 +730,20 @@
   .t\:placeholder\:text-\[\#7C7C7C\] {
     &::placeholder {
       color: #7C7C7C;
+    }
+  }
+  .t\:hover\:bg-\[\#E11718\] {
+    &:hover {
+      @media (hover: hover) {
+        background-color: #E11718;
+      }
+    }
+  }
+  .t\:hover\:text-white {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--t-color-white);
+      }
     }
   }
   .t\:min-\[600px\]\:text-\[22px\] {
