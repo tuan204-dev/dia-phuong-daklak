@@ -382,15 +382,28 @@ function goToWardNews(ward) {
         var top = anchor.getBoundingClientRect().top + window.pageYOffset - 100;
         window.scrollTo({ top: top, behavior: 'smooth' });
     }
+
+    // Cập nhật query trên URL theo xã đang xem (?id={id}) để chia sẻ / reload đúng xã.
+    // Dùng replaceState để không reload trang, không chồng history.
+    if (ward.id) {
+        try {
+            history.replaceState(null, '', window.location.pathname + '?id=' + encodeURIComponent(ward.id));
+        } catch (e) { /* trình duyệt không hỗ trợ -> bỏ qua */ }
+    }
 }
 
-// Deep link: vào trang với #xa_cuor_ang (#{id}) -> mở sẵn tab TIN TỨC của xã đó.
+// Deep link: vào trang với ?id=xa_cuor_ang (?id={id}) -> mở sẵn tab TIN TỨC của xã đó.
 // Gọi sau mỗi lần dữ liệu xã tải xong; cờ wardFromUrlDone đảm bảo chỉ chạy 1 lần.
 var wardFromUrlDone = false;
 function openWardFromUrl() {
     if (wardFromUrlDone) return;
-    var id = (window.location.hash || '').replace(/^#/, '').trim();
-    if (!id) { wardFromUrlDone = true; return; } // không có hash -> khỏi xử lý
+    var id;
+    try {
+        id = (new URLSearchParams(window.location.search).get('id') || '').trim();
+    } catch (e) {
+        id = '';
+    }
+    if (!id) { wardFromUrlDone = true; return; } // không có ?id -> khỏi xử lý
     var ward = findWardById(id);
     if (!ward) return; // dữ liệu chưa sẵn sàng -> để lần tải sau gọi lại
     wardFromUrlDone = true;
@@ -403,6 +416,8 @@ function openWardFromUrl() {
 var NEWS_PAGE_SIZE = 14;
 var NEWS_IMG_BASE = 'https://baodaklak.vn/file';
 var NEWS_SITE_FALLBACK = 'fb9e3a03798789de0179a1704dea238e';
+// Chuyên mục mặc định khi chưa chọn xã (current_cate_id/title rỗng) -> tải tin tổng & ẩn nhãn "TIN TỨC XÃ..."
+var NEWS_DEFAULT_CATE_ID = '8a10c0e298f2b23f0198f5ea36cd1a77';
 var NEWS_AUTO_LOAD_MAX = 2; // số lần tự tải khi nút "Xem thêm" lọt vào tầm nhìn, sau đó phải click
 var newsState = { cateId: '', first: 0, total: 0, loading: false, reqId: 0, autoLoads: 0 };
 var newsLoadMoreBound = false;
@@ -597,12 +612,15 @@ function loadCategoryNews() {
     var cateId = cateEl ? cateEl.textContent.trim() : '';
     var cateTitle = titleEl ? titleEl.textContent.trim() : '';
 
+    // Chưa chọn xã (cả 2 element rỗng) -> tải chuyên mục mặc định & ẩn nhãn "TIN TỨC XÃ..."
+    var hasCate = !!cateId;
+    var wrap = document.getElementById('news-cate-title-wrap');
+    if (wrap) wrap.style.display = hasCate ? '' : 'none';
+
     var label = document.getElementById('news-cate-title');
-    if (label && cateTitle) label.textContent = 'Tin tức ' + cateTitle;
+    if (label && hasCate && cateTitle) label.textContent = 'Tin tức ' + cateTitle;
 
-    if (!cateId) return;
-
-    newsState.cateId = cateId;
+    newsState.cateId = cateId || NEWS_DEFAULT_CATE_ID;
     newsState.first = 0;
     newsState.total = 0;
     newsState.autoLoads = 0; // mỗi chuyên mục mới được tự tải lại từ đầu
