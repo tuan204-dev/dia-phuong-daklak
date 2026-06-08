@@ -203,6 +203,109 @@ function loadWard() {
     });
 }
 
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function formatPopulation(value) {
+    if (value === null || value === undefined || value === '') return '';
+    var num = typeof value === 'number'
+        ? value
+        : parseInt(String(value).replace(/[^\d]/g, ''), 10);
+    if (isNaN(num)) return String(value);
+    // thousand separator with "." (vi-VN), no Intl dependency
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+let cachedWardDetails = null;
+
+function renderWardDetails(data) {
+    var container = document.getElementById('ward-detail-list');
+    if (!container) return;
+    if (!data || !data.length) {
+        container.innerHTML = '';
+        return;
+    }
+
+    var placeholder = './assets/images/1eedaeffbe46c36841782eac488c1f0710028c55.png';
+
+    var html = data.map(function (item) {
+        var rows = [];
+        function row(label, value) {
+            if (value === null || value === undefined || String(value).trim() === '') return;
+            rows.push('<li><strong>' + label + ':</strong> ' + escapeHtml(value) + '</li>');
+        }
+
+        row('Diện tích', item.dien_tich_km2 ? item.dien_tich_km2 + ' km²' : '');
+        row('Dân số', item.dan_so ? formatPopulation(item.dan_so) + ' người' : '');
+        row('Trụ sở UBND', item.tru_so_ubnd);
+        row('Trụ sở Đảng ủy', item.tru_so_dang_uy);
+        row('Trụ sở HĐND', item.tru_so_hdnd);
+        row('Trung tâm Phục vụ hành chính công xã', item.tru_so_trung_tam_hanh_chinh);
+        row('Trụ sở Công an xã', item.tru_so_cong_an);
+
+        if (Array.isArray(item.lanh_dao) && item.lanh_dao.length) {
+            rows.push(
+                '<li><strong>Lãnh đạo xã, phường:</strong>' +
+                '<div class="t:pl-4 t:mt-1 t:flex t:flex-col t:gap-y-1">' +
+                item.lanh_dao.map(function (leader) {
+                    return '<span>' + escapeHtml(leader) + '</span>';
+                }).join('') +
+                '</div></li>'
+            );
+        }
+
+        row('Thông tin sáp nhập', item.thong_tin_sap_nhap);
+
+        var img = escapeHtml(item.image_url || placeholder);
+        var name = escapeHtml(item.ten_xa_phuong || '');
+        var id = escapeHtml(item.id || '');
+
+        return '<div id="' + id + '" class="t:scroll-mt-28 t:flex t:flex-col t:rounded-[12px] t:overflow-hidden t:border t:border-[#A01011]">' +
+            '<div class="t:px-4 t:py-2 t:bg-[#A01011] t:text-white t:font-bold">' +
+            '<h3 class="t:text-[20px] t:uppercase">' + name + '</h3>' +
+            '</div>' +
+            '<div class="t:px-4 t:lg:px-4 t:pt-3 t:pb-6 t:flex t:flex-col-reverse t:gap-y-4 t:lg:grid t:lg:grid-cols-5 t:lg:gap-x-6 t:lg:gap-y-0 t:bg-white">' +
+            '<div class="t:col-span-3 t:flex t:flex-col t:gap-y-3.5">' +
+            '<ul class="t:text-base t:flex t:flex-col t:gap-y-2 t:list-disc t:pl-5">' +
+            rows.join('') +
+            '</ul>' +
+            '<a href="" class="t:block t:w-fit t:mx-auto t:lg:mx-0 t:px-4 t:py-2 t:rounded-full t:border t:border-[#E11718] t:text-[#E11718]">Xem tin tức</a>' +
+            '</div>' +
+            '<div class="t:col-span-2">' +
+            '<img src="' + img + '" alt="' + name + '" class="t:w-full t:rounded-[6px] t:aspect-[16/9] t:object-cover">' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+    }).join('');
+
+    container.innerHTML = html;
+}
+
+function loadWardDetails() {
+    var container = document.getElementById('ward-detail-list');
+    if (!container) return;
+    if (cachedWardDetails) {
+        renderWardDetails(cachedWardDetails);
+        return;
+    }
+    $.ajax({
+        url: 'https://pub-767846261d1b4ab5adf906740bb1458e.r2.dev/assets-daklak/xa_phuong/data.json',
+        dataType: 'json',
+        success: function (data) {
+            cachedWardDetails = data;
+            renderWardDetails(data);
+        },
+        error: function (error) {
+            console.log('loadWardDetails error: ', error);
+        }
+    });
+}
+
 function removeVietnameseTones(str) {
     str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     str = str.replace(/đ/g, 'd').replace(/Đ/g, 'D');
@@ -394,7 +497,7 @@ function getTopView() {
                             item.title +
                             '</a>' +
                             '</h3>' +
-                                '<time datetime="' + item.publishDate + '" class="time">' + formatPublishDate(item.publishDate) + '</time>' +
+                            '<time datetime="' + item.publishDate + '" class="time">' + formatPublishDate(item.publishDate) + '</time>' +
                             '</div>' +
                             '</div>';
                     }).join('');
@@ -565,13 +668,14 @@ function clampByWordsFromTailwind(el) {
 
 function handleClampText() {
     document.querySelectorAll('[class*="line-clamp-"]').forEach(el => {
-    clampByWordsFromTailwind(el);
+        clampByWordsFromTailwind(el);
     });
 }
 
 toggleBroadcastTab();
 cateTitleAnimation();
 loadWard();
+loadWardDetails();
 searchWard();
 wardSuggestions();
 wardTabs();

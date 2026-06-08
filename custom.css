@@ -1,4 +1,6 @@
 ﻿@import "tailwindcss" prefix(t);
+@source "./index.html";
+@source "./assets/home.js";
 
 @theme {
   --color-tw-primary: #212636;
