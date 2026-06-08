@@ -177,9 +177,10 @@ function renderWardSlides(data) {
 
     const slideHtml = data.map(function (item) {
         var wardName = escapeHtml(item.ten_xa_phuong || '');
+        var id = escapeHtml(item.id || '');
         return '<div class="swiper-slide swiper-slide-active">' +
             '<div class="slide-tag">' +
-            '<a class="tag inter t:uppercase" href="/thong-tin-102-xa-phuong-tinh-dak-lak/#' + escapeHtml(item.id || '') + '" title="' + wardName + '">' + wardName + '</a>' +
+            '<a class="tag inter t:uppercase t:cursor-pointer ward-tag-link" data-id="' + id + '" title="' + wardName + '">' + wardName + '</a>' +
             '</div>' +
             '</div>';
     }).join('');
@@ -387,8 +388,10 @@ function goToWardNews(ward) {
 var NEWS_PAGE_SIZE = 14;
 var NEWS_IMG_BASE = 'https://baodaklak.vn/file';
 var NEWS_SITE_FALLBACK = 'fb9e3a03798789de0179a1704dea238e';
-var newsState = { cateId: '', first: 0, total: 0, loading: false, reqId: 0 };
+var NEWS_AUTO_LOAD_MAX = 2; // số lần tự tải khi nút "Xem thêm" lọt vào tầm nhìn, sau đó phải click
+var newsState = { cateId: '', first: 0, total: 0, loading: false, reqId: 0, autoLoads: 0 };
 var newsLoadMoreBound = false;
+var newsAutoObserver = null;
 
 function newsImage(item, query) {
     var path = item && item.avatar
@@ -494,7 +497,7 @@ function appendNewsRelated(list) {
     related.insertAdjacentHTML('beforeend', list.map(newsRelatedHtml).join(''));
 }
 
-function fetchCategoryNews(isInitial) {
+function fetchCategoryNews(isInitial, onDone) {
     if (!newsState.cateId) return;
     // "Xem thêm" không chồng request; nhưng load đầu (đổi xã) luôn được ưu tiên
     if (newsState.loading && !isInitial) return;
@@ -526,6 +529,7 @@ function fetchCategoryNews(isInitial) {
             newsState.first += list.length;
             newsState.loading = false;
             newsUpdateLoadMore();
+            if (typeof onDone === 'function') onDone();
         },
         error: function (error) {
             if (reqId !== newsState.reqId) return;
@@ -534,6 +538,39 @@ function fetchCategoryNews(isInitial) {
             newsUpdateLoadMore();
         }
     });
+}
+
+// Nút "Xem thêm" có đang nằm trong vùng nhìn không (và đang hiển thị)?
+function isNewsBtnInViewport() {
+    var wrap = document.getElementById('news-load-more-wrap');
+    if (!wrap || wrap.style.display === 'none') return false;
+    if (!wrap.offsetWidth && !wrap.offsetHeight) return false; // đang ẩn (tab chưa mở)
+    var rect = wrap.getBoundingClientRect();
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    return rect.top < vh && rect.bottom > 0;
+}
+
+// Tự tải thêm tối đa NEWS_AUTO_LOAD_MAX lần khi nút lọt vào tầm nhìn, sau đó phải click.
+function autoLoadNews() {
+    if (newsState.loading) return;
+    if (newsState.autoLoads >= NEWS_AUTO_LOAD_MAX) return;
+    if (newsState.total && newsState.first >= newsState.total) return; // hết bài
+    if (!isNewsBtnInViewport()) return;
+    newsState.autoLoads++;
+    fetchCategoryNews(false, function () {
+        // tải xong: nếu vẫn còn lượt auto và nút vẫn trong tầm nhìn -> tải tiếp
+        setTimeout(autoLoadNews, 150);
+    });
+}
+
+function setupNewsAutoLoad() {
+    if (newsAutoObserver || typeof IntersectionObserver === 'undefined') return;
+    var wrap = document.getElementById('news-load-more-wrap');
+    if (!wrap) return;
+    newsAutoObserver = new IntersectionObserver(function (entries) {
+        if (entries[0] && entries[0].isIntersecting) autoLoadNews();
+    });
+    newsAutoObserver.observe(wrap);
 }
 
 function loadCategoryNews() {
@@ -553,16 +590,24 @@ function loadCategoryNews() {
     newsState.cateId = cateId;
     newsState.first = 0;
     newsState.total = 0;
+    newsState.autoLoads = 0; // mỗi chuyên mục mới được tự tải lại từ đầu
 
     var btn = document.getElementById('news-load-more');
     if (btn && !newsLoadMoreBound) {
         newsLoadMoreBound = true;
+        // click thủ công: tắt luôn auto cho lượt sau (đã chuyển sang chế độ click)
         btn.addEventListener('click', function () {
+            newsState.autoLoads = NEWS_AUTO_LOAD_MAX;
             fetchCategoryNews(false);
         });
     }
 
-    fetchCategoryNews(true);
+    setupNewsAutoLoad();
+
+    // sau khi render trang đầu, nếu nút đã nằm trong tầm nhìn -> tự tải
+    fetchCategoryNews(true, function () {
+        setTimeout(autoLoadNews, 150);
+    });
 }
 
 function removeVietnameseTones(str) {
@@ -646,20 +691,20 @@ function wardTabs() {
         });
     });
 
-    // "Xem tin tức" buttons are rendered async into the ward list — delegate
-    // the click so they open the TIN TỨC tab cho đúng xã.
+    // Nút "Xem tin tức" (card xã) và tag xã trong swiper đều render bất đồng bộ —
+    // delegate click để mở tab TIN TỨC cho đúng xã.
     document.addEventListener('click', function (event) {
-        var trigger = event.target.closest('.ward-news-link');
+        var trigger = event.target.closest('.ward-news-link, .ward-tag-link');
         if (!trigger) return;
         event.preventDefault();
 
         var ward = findWardById(trigger.getAttribute('data-id'));
-        // fallback từ data-* nếu cache chưa sẵn sàng
+        // fallback từ data-* / tên hiển thị nếu cache chưa sẵn sàng
         if (!ward) {
             ward = {
                 id: trigger.getAttribute('data-id') || '',
                 uuid: trigger.getAttribute('data-uuid') || '',
-                ten_xa_phuong: trigger.getAttribute('data-title') || ''
+                ten_xa_phuong: trigger.getAttribute('data-title') || trigger.textContent.trim()
             };
         }
         goToWardNews(ward);
